@@ -3,7 +3,7 @@ CC      = cc
 CFLAGS  = -Wall -Wextra -Werror
 RM      = rm -f
 
-SRCS    = p_utils.c pipex.c
+SRCS    = p_utils.c pre_pipex.c pipex.c
 OBJS    = $(SRCS:.c=.o)
 
 LIBFT_DIR = libft

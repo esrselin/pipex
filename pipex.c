@@ -12,121 +12,79 @@
 
 #include "pipex.h"
 
-static int	create_infile(char **av)
+static void	execute_first_cmd(int *fds, int *pip, char **av, char **envp)
 {
-	int	fd = open(av[1], O_RDONLY);
-	if (fd == -1)
+	char	**cmd_args;
+	char	*cmd;
+
+	cmd_args = ft_split(av[2], ' ');
+	cmd = final_path(cmd_args, envp);
+	if (!cmd)
 	{
-		perror("Infile could not be opened");
-		exit(1);
+		perror("Command not found");
+		free_full(cmd, cmd_args);
+		exit(127);
 	}
-	return (fd);
+	dup2(fds[0], STDIN_FILENO);
+	dup2(pip[1], STDOUT_FILENO);
+	close_all(fds[0], fds[1], pip);
+	execve(cmd, cmd_args, envp);
+	perror("Execve cmd1 failed");
+	free_full(cmd, cmd_args);
+	exit(1);
 }
 
-static int	create_outfile(char **av)
+static void	execute_second_cmd(int *fds, int *pip, char **av, char **envp)
 {
-	int	fd2 = open(av[4], O_CREAT | O_TRUNC | O_WRONLY, 0644);
-	if (fd2 == -1)
+	char	**cmd_args;
+	char	*cmd;
+
+	cmd_args = ft_split(av[3], ' ');
+	cmd = final_path(cmd_args, envp);
+	if (!cmd)
 	{
-		perror("Outfile could not be opened");
-		exit(1);
+		perror("Command not found");
+		free_full(cmd, cmd_args);
+		exit(127);
 	}
-	return (fd2);
+	dup2(pip[0], STDIN_FILENO);
+	dup2(fds[1], STDOUT_FILENO);
+	close_all(fds[0], fds[1], pip);
+	execve(cmd, cmd_args, envp);
+	perror("Execve cmd2 failed");
+	free_full(cmd, cmd_args);
+	exit(1);
 }
 
-static void	null_check(char **av)
+static void	create_pipe_and_fork(int *fds, int *pip, char **av, char **envp)
 {
-	int	i = 0;
-	while (av[i])
-	{
-		if (av[i][0] == '\0' || av[i][0] == ' ')
-		{
-			perror("Null argument");
-			exit(127);
-		}
-		i++;
-	}
-}
-static void close_all(int fd, int fd2, int pip[2])
-{
-    close(fd);
-	close(fd2);
-	close(pip[0]);
-	close(pip[1]);
-}
-static void free_full(char *cmd, char **cmd_arg)
-{
-    ft_free_split(cmd_arg);
-    free(cmd);
-}
-int	main(int ac, char *av[], char **envp)
-{
-	int		pip[2];
 	pid_t	p_id;
 	pid_t	p_id2;
-	int		fd;
-	int		fd2;
-	char	*cmd1;
-	char	*cmd2;
-	char	**cmd1_args;
-	char	**cmd2_args;
-
-	if (ac != 5)
-	{
-		perror("Usage: ./pipex infile cmd1 cmd2 outfile");
-		exit(1);
-	}
-	null_check(av);
-	fd = create_infile(av);
-	fd2 = create_outfile(av);
-	cmd1_args = ft_split(av[2], ' ');
-	cmd2_args = ft_split(av[3], ' ');
-    cmd1 = final_path(cmd1_args, envp);
-    cmd2 = final_path(cmd2_args, envp);
-    if (!cmd1 || !cmd2)
-    {
-        perror("Command not found");
-        free_full(cmd1, cmd1_args);
-        free_full(cmd2, cmd2_args);
-        close_all(fd, fd2, pip);
-        exit(127);
-    }
 
 	if (pipe(pip) == -1)
 	{
 		perror("pipe");
 		exit(1);
 	}
-
 	p_id = fork();
 	if (p_id == 0)
-	{
-		dup2(fd, STDIN_FILENO);
-		dup2(pip[1], STDOUT_FILENO);
-		close_all(fd,fd2, pip);
-		execve(cmd1, cmd1_args, envp);
-		perror("Execve cmd1 failed");
-		free_full(cmd1, cmd1_args);
-		exit(1);
-	}
-    
+		execute_first_cmd(fds, pip, av, envp);
 	p_id2 = fork();
 	if (p_id2 == 0)
-	{
-        dup2(pip[0], STDIN_FILENO);
-		dup2(fd2, STDOUT_FILENO);
-		close_all(fd,fd2, pip);
-		execve(cmd2, cmd2_args, envp);
-		perror("Execve cmd2 failed");
-		free_full(cmd2, cmd2_args);
-		exit(1);
-	}
-    
-	close_all(fd,fd2, pip);
+		execute_second_cmd(fds, pip, av, envp);
+	close_all(fds[0], fds[1], pip);
 	waitpid(p_id, NULL, 0);
 	waitpid(p_id2, NULL, 0);
-    
-    free_full(cmd1, cmd1_args);
-    free_full(cmd2, cmd2_args);
+}
+
+int	main(int ac, char *av[], char **envp)
+{
+	int	pip[2];
+	int	fds[2];
+
+	check_arguments(ac, av);
+	fds[0] = create_infile(av);
+	fds[1] = create_outfile(av);
+	create_pipe_and_fork(fds, pip, av, envp);
 	return (0);
 }

@@ -25,5 +25,11 @@
 char	*find_path(char **envp);
 char	*final_path(char **av, char **envp);
 void	ft_free_split(char **arr);
+int		create_infile(char **av);
+int		create_outfile(char **av);
+void	null_check(char **av);
+void	close_all(int fd, int fd2, int pip[2]);
+void	free_full(char *cmd, char **cmd_arg);
+void	check_arguments(int ac, char *av[]);
 
 #endif

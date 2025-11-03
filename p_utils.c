@@ -6,7 +6,7 @@
 /*   By: esakgul <esakgul@student.42istanbul.com    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/31 17:26:11 by esakgul           #+#    #+#             */
-/*   Updated: 2025/11/04 01:32:38 by esakgul          ###   ########.fr       */
+/*   Updated: 2025/11/04 02:44:07 by esakgul          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -77,4 +77,20 @@ char	*final_path(char **av, char **envp)
 	}
 	ft_free_split(path_sep);
 	return (NULL);
+}
+
+void	null_check(char **av)
+{
+	int	i;
+
+	i = 0;
+	while (av[i])
+	{
+		if (av[i][0] == '\0' || av[i][0] == ' ')
+		{
+			perror("Null argument");
+			exit(127);
+		}
+		i++;
+	}
 }
