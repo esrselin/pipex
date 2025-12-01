@@ -281,8 +281,3 @@ Parent closes all pipes and waits.
 `execve(path, argv, envp)` replaces the current process image with a new one.
 
 If execve fails → print error.
-
----
-✅ a more advanced README with diagrams and colors
-✅ screenshots or examples
-Just tell me!
